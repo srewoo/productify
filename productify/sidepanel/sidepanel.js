@@ -841,6 +841,22 @@ function bindEvents() {
     }
   });
 
+  // Help / Docs
+  const helpBtn = $('btn-open-help');
+  if (helpBtn) {
+    helpBtn.addEventListener('click', () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL('help.html') });
+    });
+  }
+
+  // Privacy policy
+  const privacyBtn = $('btn-open-privacy');
+  if (privacyBtn) {
+    privacyBtn.addEventListener('click', () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL('privacypolicy.html') });
+    });
+  }
+
   // History toggle
   $('history-toggle').addEventListener('click', () => {
     const body = $('history-body');

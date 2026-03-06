@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Productify – Help</title>
+  <link rel="stylesheet" href="styles/design-tokens.css" />
+  <link rel="stylesheet" href="styles/animations.css" />
+  <link rel="stylesheet" href="styles/themes.css" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      margin: 0;
+      padding: 32px 24px 40px;
+      background: var(--color-surface-elevated);
+      color: var(--color-text-primary);
+    }
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-size: 1.1rem;
+      margin-top: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      line-height: 1.5;
+      margin: 0.35rem 0;
+    }
+    ul {
+      padding-left: 1.2rem;
+      margin: 0.35rem 0 0.75rem;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.85rem;
+      background: var(--color-surface-subtle);
+      padding: 0.1rem 0.3rem;
+      border-radius: 4px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      background: var(--color-accent-soft);
+      color: var(--color-accent-strong);
+      margin-bottom: 0.9rem;
+    }
+    .kbd {
+      display: inline-block;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      border: 1px solid var(--color-border-subtle);
+      font-size: 0.75rem;
+      background: var(--color-surface-subtle);
+    }
+    .section-card {
+      padding: 1rem 1.1rem;
+      border-radius: 10px;
+      background: var(--color-surface-subtle);
+      border: 1px solid var(--color-border-subtle);
+      margin-top: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <span class="badge">Productify · Help</span>
+    <h1>Using Productify</h1>
+    <p>Productify is a voice‑first AI side panel for your browser. Speak your ideas, tasks, or requests and it turns them into structured AI output you can copy, refine, and send into your tools.</p>
+
+    <h2>Basic flow</h2>
+    <div class="section-card">
+      <p><strong>1. Open the side panel</strong> – click the Productify icon or use the keyboard shortcut defined in Chrome.</p>
+      <p><strong>2. Record</strong> – click the mic button or hold <span class="kbd">Space</span> while the panel is focused, then speak.</p>
+      <p><strong>3. Transcribe</strong> – audio is sent to your selected Speech‑to‑Text provider (OpenAI, Google, or ElevenLabs).</p>
+      <p><strong>4. Generate</strong> – the transcript plus page context is sent to the backend, which uses GPT‑4o to produce the result.</p>
+      <p><strong>5. Use the output</strong> – copy it, refine it, export it, or send it to Notion, GitHub, Jira, Linear, Slack, or a webhook.</p>
+    </div>
+
+    <h2>Turning ideas into prompts and specs</h2>
+    <p>You can open Productify on any page (even an empty one), click the mic, and talk through what you want to build. Productify will:</p>
+    <ul>
+      <li>Transcribe your speech into text.</li>
+      <li>Classify your intent (for example <em>prompt generation</em>, <em>task extraction</em>, <em>user story</em>, or <em>documentation</em>).</li>
+      <li>Generate a structured output you can use as a prompt, spec, or backlog.</li>
+    </ul>
+    <p>For long ideas, it works best to record in shorter segments (30–90 seconds) and use the <strong>Refine</strong> controls to iterate.</p>
+
+    <h2>History and prompt library</h2>
+    <ul>
+      <li>Every run is saved to <strong>History</strong> in the main view.</li>
+      <li>You can restore a past item to bring back its transcript, intent, and output.</li>
+      <li>Use the ⭐ button to add important outputs to the <strong>Prompt Library</strong> for quick reuse.</li>
+    </ul>
+
+    <h2>Integrations</h2>
+    <p>In <strong>Settings → Integrations</strong> you can provide API keys or URLs for Notion, GitHub, Jira, Linear, Slack, or a custom webhook. Once configured, the <strong>Send</strong> button lets you route the latest output into those tools.</p>
+
+    <h2>Microphone and permissions</h2>
+    <ul>
+      <li>Chrome will ask for microphone permission the first time you record. Choose <strong>Allow</strong>.</li>
+      <li>If you blocked it earlier, go to <code>chrome://settings/content/microphone</code> and allow the Productify extension.</li>
+      <li>You can clear all local data (history, settings, keys) from <strong>Settings → Data &amp; Privacy → Clear All Local Data</strong>.</li>
+    </ul>
+
+    <h2>Troubleshooting</h2>
+    <ul>
+      <li><strong>“Microphone Access Denied”</strong> – check Chrome’s mic settings and macOS Privacy &amp; Security → Microphone.</li>
+      <li><strong>“Processing Failed”</strong> – verify your backend URL and OpenAI key in <strong>Settings → API Keys</strong> and make sure the backend server is running.</li>
+      <li><strong>No output</strong> – ensure your STT provider key is set (Google / ElevenLabs) or Whisper is allowed for your OpenAI project.</li>
+    </ul>
+  </main>
+</body>
+</html>
+
