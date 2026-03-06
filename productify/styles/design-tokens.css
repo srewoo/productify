@@ -1,0 +1,123 @@
+/* Productify Design Tokens — CSS Custom Properties */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* === DARK THEME (default) === */
+  --bg-base:        #0F0F14;
+  --bg-surface:     #1A1A24;
+  --bg-elevated:    #22223A;
+  --bg-glass:       rgba(255, 255, 255, 0.04);
+  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --border-glass:   rgba(255, 255, 255, 0.08);
+  --border-subtle:  rgba(255, 255, 255, 0.05);
+
+  /* Accent colors */
+  --accent-primary:   #6C5CE7;
+  --accent-primary-rgb: 108, 92, 231;
+  --accent-secondary: #00D2FF;
+  --accent-secondary-rgb: 0, 210, 255;
+  --accent-success:   #00E676;
+  --accent-warning:   #FFD600;
+  --accent-error:     #FF5252;
+  --accent-amber:     #FF9F43;
+
+  /* Gradient */
+  --gradient-primary:   linear-gradient(135deg, #6C5CE7 0%, #00D2FF 100%);
+  --gradient-glow:      linear-gradient(135deg, rgba(108,92,231,0.4) 0%, rgba(0,210,255,0.4) 100%);
+  --gradient-surface:   linear-gradient(180deg, #1A1A24 0%, #141420 100%);
+  --gradient-recording: linear-gradient(135deg, #FF5252 0%, #FF9F43 100%);
+
+  /* Text */
+  --text-primary:   #F0F0F5;
+  --text-secondary: #8888A0;
+  --text-tertiary:  #5555707;
+  --text-muted:     #4A4A60;
+  --text-on-accent: #FFFFFF;
+
+  /* Spacing scale */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Border radius */
+  --radius-sm:   6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  --text-xs:   11px;
+  --text-sm:   12px;
+  --text-base: 13px;
+  --text-md:   14px;
+  --text-lg:   16px;
+  --text-xl:   18px;
+  --text-2xl:  22px;
+  --text-3xl:  28px;
+
+  --leading-tight:  1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed:1.7;
+
+  /* Shadows */
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:    0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg:    0 8px 32px rgba(0,0,0,0.6);
+  --shadow-glow:  0 0 24px rgba(108,92,231,0.3);
+  --shadow-glow-cyan: 0 0 24px rgba(0,210,255,0.3);
+  --shadow-error: 0 0 20px rgba(255,82,82,0.3);
+  --shadow-success: 0 0 20px rgba(0,230,118,0.3);
+
+  /* Backdrop blur */
+  --blur-glass: blur(16px);
+  --blur-sm:    blur(8px);
+
+  /* Transitions */
+  --transition-fast:    all 0.15s ease;
+  --transition-base:    all 0.25s ease;
+  --transition-slow:    all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring:  all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Z-index scale */
+  --z-base:    1;
+  --z-above:  10;
+  --z-modal: 100;
+  --z-toast: 200;
+}
+
+/* === LIGHT THEME === */
+[data-theme="light"] {
+  --bg-base:        #F5F5FA;
+  --bg-surface:     #FFFFFF;
+  --bg-elevated:    #EEEEF5;
+  --bg-glass:       rgba(0, 0, 0, 0.03);
+  --bg-glass-hover: rgba(0, 0, 0, 0.06);
+  --border-glass:   rgba(0, 0, 0, 0.08);
+  --border-subtle:  rgba(0, 0, 0, 0.05);
+
+  --accent-primary:   #5B4CD6;
+  --accent-primary-rgb: 91, 76, 214;
+
+  --text-primary:   #1A1A2E;
+  --text-secondary: #5A5A7A;
+  --text-tertiary:  #8888A0;
+  --text-muted:     #A0A0C0;
+
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:    0 4px 16px rgba(0,0,0,0.1);
+  --shadow-lg:    0 8px 32px rgba(0,0,0,0.12);
+  --shadow-glow:  0 0 24px rgba(91,76,214,0.2);
+
+  --gradient-surface: linear-gradient(180deg, #FFFFFF 0%, #F5F5FA 100%);
+}
