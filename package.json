@@ -1,11 +1,11 @@
 {
-  "name": "productify-extension",
+  "name": "briefly-extension",
   "version": "1.0.0",
   "private": true,
-  "description": "Productify Chrome extension – voice-powered AI assistant.",
+  "description": "Briefly Chrome extension - voice-powered AI assistant.",
   "scripts": {
     "build": "npm run zip",
-    "zip": "rm -rf dist && mkdir -p dist && cd productify && zip -r ../dist/productify.zip ."
+    "zip": "rm -rf dist && mkdir -p dist && cd Briefly && zip -r ../dist/briefly.zip ."
   },
   "keywords": [
     "chrome-extension",
@@ -17,4 +17,3 @@
   "license": "MIT",
   "devDependencies": {}
 }
-

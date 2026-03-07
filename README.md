@@ -1,4 +1,4 @@
-# Productify — Chrome Extension
+# Briefly — Chrome Extension
 
 > **Voice-powered AI assistant that converts speech to structured text, prompts, and actions — directly in your browser.**
 
@@ -30,7 +30,7 @@
 # Open Chrome → chrome://extensions
 # Enable Developer Mode (toggle top-right)
 # Click "Load unpacked"
-# Select: /path/to/productify/productify/
+# Select: /path/to/Briefly/Briefly/
 ```
 
 ### 2. Configure API Keys
@@ -48,7 +48,7 @@ Or go to **Settings** in the side panel at any time.
 ## Project Structure
 
 ```
-productify/                 ← Chrome Extension (load unpacked from here)
+Briefly/                 ← Chrome Extension (load unpacked from here)
 ├── manifest.json            ← MV3 manifest
 ├── icons/                   ← Extension icons (16, 32, 48, 128)
 ├── sidepanel/               ← Main UI
@@ -122,7 +122,7 @@ Connect via **Settings → Integrations**:
 ## Roadmap
 
 **v1.0 (current)** — Full local + cloud pipeline  
-**v2.0** — Team shared library, wake word ("Hey Pilot"), cloud sync, analytics
+**v2.0** — Team shared library, wake word ("Hey Briefly"), cloud sync, analytics
 
 ---
 

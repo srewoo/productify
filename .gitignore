@@ -32,8 +32,8 @@ build/
 coverage/
 
 # Chrome extension build artifacts (if added later)
-productify/*.zip
-productify/dist/
+Briefly/*.zip
+Briefly/dist/
 
 # Legacy backend (optional)
 serverBKP/node_modules/
