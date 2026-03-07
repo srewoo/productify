@@ -30,15 +30,15 @@ let pendingRecordingMode = 'default';
 let sessionsLoaded = false;
 let sessionsPersistTimer = null;
 // Per-tab session state
-// Shape: { lastTranscript, lastOutput, lastContext, lastIntent, lastTemplateId, recentTurns }
+// Shape: { lastTranscript, lastRefinement, lastOutput, lastContext, lastIntent, lastTemplateId, recentTurns }
 const tabSessions = new Map();
 
 function getOrCreateSession(tabId) {
   if (tabId == null) {
-    return { lastTranscript: null, lastOutput: null, lastContext: null, lastIntent: null, lastTemplateId: null, recentTurns: [] };
+    return { lastTranscript: null, lastRefinement: null, lastOutput: null, lastContext: null, lastIntent: null, lastTemplateId: null, recentTurns: [] };
   }
   if (!tabSessions.has(tabId)) {
-    tabSessions.set(tabId, { lastTranscript: null, lastOutput: null, lastContext: null, lastIntent: null, lastTemplateId: null, recentTurns: [] });
+    tabSessions.set(tabId, { lastTranscript: null, lastRefinement: null, lastOutput: null, lastContext: null, lastIntent: null, lastTemplateId: null, recentTurns: [] });
   }
   return tabSessions.get(tabId);
 }
@@ -53,6 +53,7 @@ function updateSession(tabId, patch) {
 function normalizeSession(session = {}) {
   return {
     lastTranscript: session.lastTranscript || null,
+    lastRefinement: session.lastRefinement || null,
     lastOutput: session.lastOutput || null,
     lastContext: session.lastContext || null,
     lastIntent: session.lastIntent || null,
@@ -225,7 +226,7 @@ async function handleMessage(msg, sender, sendResponse) {
           if (recordingMode === 'refine') {
             const session = getOrCreateSession(tabId);
             if (session.lastOutput) {
-              updateSession(tabId, { lastContext: session.lastContext || context });
+              updateSession(tabId, { lastContext: session.lastContext || context, lastRefinement: transcript });
               await refineOutput({
                 refinement: transcript,
                 previousOutput: session.lastOutput,
@@ -237,7 +238,7 @@ async function handleMessage(msg, sender, sendResponse) {
             }
           }
 
-          updateSession(tabId, { lastTranscript: transcript, lastContext: stripEphemeralContext(context) });
+          updateSession(tabId, { lastTranscript: transcript, lastRefinement: null, lastContext: stripEphemeralContext(context) });
           // Local intent pre-classification
           const localIntent = self.IntentClassifier?.classify(transcript) || { primary_intent: 'custom', confidence: 0.5 };
           broadcastToPanel({ type: 'INTENT_LOCAL', intent: localIntent });
@@ -263,7 +264,7 @@ async function handleMessage(msg, sender, sendResponse) {
         try {
           const context = await getPageContext({ includeScreenshot: true });
           const tabId = msg.tabId ?? currentTabId;
-          updateSession(tabId, { lastTranscript: msg.text, lastContext: stripEphemeralContext(context) });
+          updateSession(tabId, { lastTranscript: msg.text, lastRefinement: null, lastContext: stripEphemeralContext(context) });
           await processTranscript({ transcript: msg.text, context, localIntent: null, overrideIntent: msg.intent, tabId });
           sendResponse({ success: true });
         } catch (err) {
@@ -342,6 +343,7 @@ async function handleMessage(msg, sender, sendResponse) {
       case 'SYNC_SESSION': {
         updateSession(msg.tabId ?? currentTabId, {
           lastTranscript: msg.transcript ?? null,
+          lastRefinement: msg.refinement ?? null,
           lastOutput: msg.output ?? null,
           lastContext: stripEphemeralContext(msg.context ?? null)
         });
@@ -623,6 +625,7 @@ async function refineOutput({ refinement, previousOutput, context, transcript, t
     broadcastToPanel({ type: 'GENERATION_COMPLETE', output: fullOutput });
     updateSession(tabId, {
       lastOutput: fullOutput,
+      lastRefinement: refinement || null,
       recentTurns: appendRecentTurn(session.recentTurns, {
         transcript: refinement || transcript || 'refine previous output',
         output: fullOutput,
@@ -1032,7 +1035,7 @@ async function streamChatCompletion({ apiKey, body, signal, onChunk }) {
 async function transcribeWithOpenAI(audioBlob, apiKey, language, signal) {
   const formData = new FormData();
   formData.append('file', audioBlob, 'recording.webm');
-  const model = 'gpt-4o-mini-transcribe';
+  const model = 'gpt-4.1-mini-transcribe';
   formData.append('model', model);
   if (language && language !== 'auto') {
     formData.append('language', language);

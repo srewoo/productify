@@ -37,7 +37,7 @@
 
 On first launch, the onboarding flow will guide you through:
 1. Granting microphone permission
-2. Adding your **OpenAI API key** (required — for Whisper + GPT-4o)
+2. Adding your **OpenAI API key** (required — for Whisper + gpt-4.1)
 3. Optionally adding a **Google STT** key as an alternative provider
 4. Optionally adding an **ElevenLabs** key for their STT
 

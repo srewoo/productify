@@ -105,6 +105,7 @@ const State = {
   mode: 'idle',
   tabId: null,
   transcript: '',
+  latestFollowUp: '',
   output: '',
   intent: null,
   context: null,
@@ -162,6 +163,8 @@ const el = {
   transcriptSection: $('transcript-section'),
   transcriptBody: $('transcript-body'),
   transcriptText: $('transcript-text'),
+  followUpBlock: $('follow-up-block'),
+  followUpText: $('follow-up-text'),
   outputSection: $('output-section'),
   markdownOutput: $('markdown-output'),
   streamingDots: $('streaming-dots'),
@@ -693,6 +696,8 @@ async function hydrateSessionFromBackground() {
       showTranscript(session.lastTranscript);
     }
 
+    showLatestFollowUp(session.lastRefinement || '');
+
     if (session.lastIntent) {
       State.intent = { primary_intent: session.lastIntent, confidence: 1 };
       showIntentBadge(State.intent);
@@ -772,6 +777,18 @@ function showTranscript(text) {
   State.transcript = text || '';
   el.transcriptSection.style.display = '';
   el.transcriptText.textContent = State.transcript;
+}
+
+function showLatestFollowUp(text) {
+  State.latestFollowUp = text || '';
+  if (!el.followUpBlock || !el.followUpText) return;
+  if (!State.latestFollowUp) {
+    el.followUpBlock.style.display = 'none';
+    el.followUpText.textContent = '';
+    return;
+  }
+  el.followUpBlock.style.display = '';
+  el.followUpText.textContent = State.latestFollowUp;
 }
 
 function showOutputSection(loading = false) {
@@ -954,6 +971,7 @@ async function deleteHistory(id) {
 
 function restoreHistory(entry) {
   State.transcript = entry.transcript || '';
+  State.latestFollowUp = '';
   State.output = entry.output || '';
   State.intent = entry.intent ? { primary_intent: entry.intent, confidence: 1 } : null;
   State.context = entry.context || State.context;
@@ -1083,6 +1101,7 @@ function submitRefine() {
   if (!refinement && !State.transcript) return;
   el.refineInput.value = '';
   el.refineSection.style.display = 'none';
+  showLatestFollowUp(refinement);
   prepareFreshGeneration();
   setMode('generating');
   chrome.runtime.sendMessage({ type: 'REFINE_OUTPUT', refinement, tabId: State.tabId });
@@ -1619,6 +1638,7 @@ function syncSessionToBackground() {
     type: 'SYNC_SESSION',
     tabId: State.tabId,
     transcript: State.transcript,
+    refinement: State.latestFollowUp,
     output: State.output,
     context: State.context
   }).catch(() => {});

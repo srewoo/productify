@@ -63,12 +63,12 @@ export function resolveModelPlan({ settings = {}, templateId, intent, hasScreens
   const highDetailTemplate = ['pr_review', 'test_plan', 'product_spec', 'bug_report'].includes(templateId);
 
   if (qualityMode === 'fast') {
-    return { primaryModel: 'gpt-4o-mini', fallbackModel: null, temperature: 0.55, maxTokens: 1800 };
+    return { primaryModel: 'gpt-4.1-mini', fallbackModel: null, temperature: 0.55, maxTokens: 1800 };
   }
 
   if (qualityMode === 'high_precision' || hasScreenshot || highDetailTemplate || intent === 'code_review') {
-    return { primaryModel: 'gpt-4o', fallbackModel: 'gpt-4o-mini', temperature: 0.45, maxTokens: 2200 };
+    return { primaryModel: 'gpt-4.1', fallbackModel: 'gpt-4.1-mini', temperature: 0.45, maxTokens: 2200 };
   }
 
-  return { primaryModel: 'gpt-4o-mini', fallbackModel: 'gpt-4o', temperature: 0.65, maxTokens: 2000 };
+  return { primaryModel: 'gpt-4.1-mini', fallbackModel: 'gpt-4.1', temperature: 0.65, maxTokens: 2000 };
 }

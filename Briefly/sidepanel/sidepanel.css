@@ -524,6 +524,10 @@ button, input, textarea, select {
   border-top: 1px dashed var(--border-subtle);
 }
 
+.follow-up-block {
+  margin-top: var(--space-3);
+}
+
 .signal-chip {
   padding: 8px 10px;
 }
@@ -1058,22 +1062,32 @@ button, input, textarea, select {
 
 .modal-overlay,
 .error-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: var(--z-modal);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: var(--space-4);
   background: rgba(5, 8, 8, 0.68);
   backdrop-filter: blur(16px);
+  overflow-y: auto;
+}
+
+.error-overlay {
+  align-items: center;
 }
 
 .modal {
   width: 100%;
   max-width: 620px;
+  max-height: calc(100vh - (var(--space-4) * 2));
+  margin: var(--space-4) auto;
   padding: var(--space-4);
   border-radius: 28px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-wide {
@@ -1087,6 +1101,11 @@ button, input, textarea, select {
 .modal-grid {
   display: grid;
   gap: var(--space-2);
+}
+
+.modal-body {
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .integration-review-layout {

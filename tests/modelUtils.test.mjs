@@ -42,8 +42,8 @@ test('resolveModelPlan escalates for screenshots and high precision mode', () =>
   const visual = resolveModelPlan({ settings: { qualityMode: 'balanced' }, templateId: 'general_assistant', intent: 'custom', hasScreenshot: true });
   const fast = resolveModelPlan({ settings: { qualityMode: 'fast' }, templateId: 'general_assistant', intent: 'custom', hasScreenshot: false });
 
-  assert.equal(balanced.primaryModel, 'gpt-4o-mini');
-  assert.equal(visual.primaryModel, 'gpt-4o');
-  assert.equal(fast.primaryModel, 'gpt-4o-mini');
+  assert.equal(balanced.primaryModel, 'gpt-4.1-mini');
+  assert.equal(visual.primaryModel, 'gpt-4.1');
+  assert.equal(fast.primaryModel, 'gpt-4.1-mini');
   assert.equal(fast.fallbackModel, null);
 });
