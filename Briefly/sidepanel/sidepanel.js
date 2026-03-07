@@ -76,6 +76,7 @@ const TEMPLATE_DEFS = [
 ];
 
 const PAGE_TYPE_TEMPLATE_RULES = {
+  internet: { templateId: 'general_assistant', reason: 'Internet search context' },
   'github-pr': { templateId: 'pr_review', reason: 'Pull request page' },
   'github-code': { templateId: 'pr_review', reason: 'Code page' },
   'github-issue': { templateId: 'bug_report', reason: 'Issue page' },
@@ -166,6 +167,8 @@ const el = {
   followUpBlock: $('follow-up-block'),
   followUpText: $('follow-up-text'),
   outputSection: $('output-section'),
+  outputPlaceholder: $('output-placeholder'),
+  outputPlaceholderText: $('output-placeholder-text'),
   markdownOutput: $('markdown-output'),
   streamingDots: $('streaming-dots'),
   actionBar: $('action-bar'),
@@ -655,6 +658,8 @@ function prepareFreshGeneration() {
   State.intent = null;
   streamBuffer = '';
   el.markdownOutput.innerHTML = '';
+  if (el.outputPlaceholder) el.outputPlaceholder.style.display = 'flex';
+  if (el.outputPlaceholderText) el.outputPlaceholderText.textContent = 'Generating output...';
   el.btnStar.classList.remove('starred');
   el.intentRow.style.display = 'none';
   el.intentSuggestions.style.display = 'none';
@@ -733,6 +738,23 @@ function renderContextSnapshot() {
     return;
   }
 
+  if (State.context.contextSource === 'internet') {
+    el.contextPageTitle.textContent = 'Internet context';
+    el.contextMeta.textContent = 'Web search / Internet';
+    el.contextSelection.textContent = 'Briefly will search the live web because this tab does not expose usable page content.';
+    el.contextLastUpdated.textContent = State.context.extractedAt ? I18n.relativeTime(State.context.extractedAt) : 'Just now';
+
+    const signals = [
+      'Internet search',
+      'No page snapshot'
+    ];
+    if (State.settings.threadMemory) signals.push('Recent tab memory available');
+    if (State.settings.redactSensitive) signals.push('Sensitive strings redacted');
+
+    el.contextSignalList.innerHTML = signals.map(signal => `<span class="signal-chip">${escHtml(signal)}</span>`).join('');
+    return;
+  }
+
   const {
     pageTitle,
     domain,
@@ -794,13 +816,18 @@ function showLatestFollowUp(text) {
 function showOutputSection(loading = false) {
   el.outputSection.style.display = '';
   el.actionBar.style.display = '';
-  if (loading) el.streamingDots.style.display = 'flex';
+  if (loading) {
+    if (el.outputPlaceholder) el.outputPlaceholder.style.display = 'flex';
+    if (el.outputPlaceholderText) el.outputPlaceholderText.textContent = 'Generating output...';
+    el.streamingDots.style.display = 'flex';
+  }
 }
 
 function appendStreamChunk(text) {
   if (!State.isStreaming) {
     State.isStreaming = true;
     streamBuffer = '';
+    if (el.outputPlaceholder) el.outputPlaceholder.style.display = 'none';
     el.streamingDots.style.display = 'none';
     el.markdownOutput.innerHTML = '';
   }
@@ -815,6 +842,12 @@ function appendStreamChunk(text) {
 function finalizeOutput() {
   State.isStreaming = false;
   if (streamCursor) streamCursor.remove();
+  if (el.outputPlaceholder) {
+    el.outputPlaceholder.style.display = State.output ? 'none' : 'flex';
+  }
+  if (el.outputPlaceholderText && !State.output) {
+    el.outputPlaceholderText.textContent = 'No output was generated.';
+  }
   el.markdownOutput.innerHTML = Markdown.render(State.output);
   el.actionBar.style.display = '';
 }

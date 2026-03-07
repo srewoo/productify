@@ -471,58 +471,66 @@ async function processTranscript({ transcript, context, localIntent, overrideInt
     });
     const userMessage = buildUserMessagePayload(transcript, context, normalizedSettings, session);
 
-    const { output: fullOutput } = await streamChatCompletionWithFallback({
-      apiKey: openaiKey,
-      body: {
-        model: modelPlan.primaryModel,
-        temperature: modelPlan.temperature,
-        max_tokens: modelPlan.maxTokens,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
-        ]
-      },
-      fallbackBody: modelPlan.fallbackModel && modelPlan.fallbackModel !== modelPlan.primaryModel
-        ? {
-            model: modelPlan.fallbackModel,
+    const fullOutput = context?.contextSource === 'internet'
+      ? await generateInternetSearchOutput({
+          apiKey: openaiKey,
+          transcript,
+          context,
+          settings: normalizedSettings,
+          session,
+          systemPrompt,
+          signal: controller.signal
+        })
+      : await generateGuaranteedOutput({
+          apiKey: openaiKey,
+          body: {
+            model: modelPlan.primaryModel,
             temperature: modelPlan.temperature,
             max_tokens: modelPlan.maxTokens,
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userMessage }
             ]
+          },
+          fallbackBody: modelPlan.fallbackModel && modelPlan.fallbackModel !== modelPlan.primaryModel
+            ? {
+                model: modelPlan.fallbackModel,
+                temperature: modelPlan.temperature,
+                max_tokens: modelPlan.maxTokens,
+                messages: [
+                  { role: 'system', content: systemPrompt },
+                  { role: 'user', content: userMessage }
+                ]
+              }
+            : null,
+          signal: controller.signal,
+          onChunk(text) {
+            broadcastToPanel({ type: 'STREAM_CHUNK', text });
           }
-        : null,
-      signal: controller.signal,
-      onChunk(text) {
-        broadcastToPanel({ type: 'STREAM_CHUNK', text });
-      }
-    });
+        });
     clearTimeout(timeout);
 
-    if (fullOutput) {
-      broadcastToPanel({ type: 'GENERATION_COMPLETE', output: fullOutput });
-      updateSession(tabId, {
-        lastOutput: fullOutput,
-        lastIntent: intent,
-        lastTemplateId: templateId,
-        lastContext: { ...stripEphemeralContext(context || {}), intent, templateId },
-        recentTurns: appendRecentTurn(session.recentTurns, {
-          transcript,
-          output: fullOutput,
-          intent,
-          templateId,
-          timestamp: Date.now()
-        })
-      });
-      await saveToHistory({
+    broadcastToPanel({ type: 'GENERATION_COMPLETE', output: fullOutput });
+    updateSession(tabId, {
+      lastOutput: fullOutput,
+      lastIntent: intent,
+      lastTemplateId: templateId,
+      lastContext: { ...stripEphemeralContext(context || {}), intent, templateId },
+      recentTurns: appendRecentTurn(session.recentTurns, {
         transcript,
         output: fullOutput,
-        context: stripEphemeralContext(context),
-        intent: intent,
-        templateId
-      });
-    }
+        intent,
+        templateId,
+        timestamp: Date.now()
+      })
+    });
+    await saveToHistory({
+      transcript,
+      output: fullOutput,
+      context: stripEphemeralContext(context),
+      intent: intent,
+      templateId
+    });
   } catch (err) {
     clearTimeout(timeout);
     if (err.name === 'AbortError') throw new Error('Generation timed out. Try again.');
@@ -548,7 +556,7 @@ async function refineOutput({ refinement, previousOutput, context, transcript, t
     hasScreenshot: false
   });
 
-  const { output: fullOutput } = await streamChatCompletionWithFallback({
+  const fullOutput = await generateGuaranteedOutput({
     apiKey: openaiKey,
     body: {
       model: modelPlan.primaryModel,
@@ -621,20 +629,18 @@ async function refineOutput({ refinement, previousOutput, context, transcript, t
     }
   });
 
-  if (fullOutput) {
-    broadcastToPanel({ type: 'GENERATION_COMPLETE', output: fullOutput });
-    updateSession(tabId, {
-      lastOutput: fullOutput,
-      lastRefinement: refinement || null,
-      recentTurns: appendRecentTurn(session.recentTurns, {
-        transcript: refinement || transcript || 'refine previous output',
-        output: fullOutput,
-        intent: session.lastIntent || 'custom',
-        templateId: session.lastTemplateId || normalizedSettings.activeTemplate,
-        timestamp: Date.now()
-      })
-    });
-  }
+  broadcastToPanel({ type: 'GENERATION_COMPLETE', output: fullOutput });
+  updateSession(tabId, {
+    lastOutput: fullOutput,
+    lastRefinement: refinement || null,
+    recentTurns: appendRecentTurn(session.recentTurns, {
+      transcript: refinement || transcript || 'refine previous output',
+      output: fullOutput,
+      intent: session.lastIntent || 'custom',
+      templateId: session.lastTemplateId || normalizedSettings.activeTemplate,
+      timestamp: Date.now()
+    })
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -761,13 +767,28 @@ function buildUserMessagePayload(transcript, context, settings = {}, session = {
 
 function buildUserMessage(transcript, context, settings = {}, session = {}) {
   const sanitizedContext = sanitizePromptContext(context, settings);
-  const parts = [
-    `User request:\n${transcript}`,
-    'Context priority:\n1. Selected text\n2. Code snippets\n3. Visible page snapshot\n4. Metadata such as headings, forms, and page type'
-  ];
+  const isInternetContext = sanitizedContext?.contextSource === 'internet';
+  const parts = isInternetContext
+    ? [
+        `User request:\n${transcript}`,
+        'Context source:\nLive internet web search',
+        'Instruction:\nSearch the live web for the most relevant current information, synthesize it into one direct answer, and state uncertainty briefly when the sources do not fully agree.'
+      ]
+    : [
+        `User request:\n${transcript}`,
+        'Context priority:\n1. Selected text\n2. Code snippets\n3. Visible page snapshot\n4. Metadata such as headings, forms, and page type'
+      ];
   const recentTurnsSummary = summarizeRecentTurns(session?.recentTurns, settings);
   if (recentTurnsSummary) {
     parts.push(`Recent tab history:\n${recentTurnsSummary}`);
+  }
+  if (isInternetContext) {
+    if (sanitizedContext?.pageTitle) parts.push(`Fallback context label:\n${sanitizedContext.pageTitle}`);
+    if (sanitizedContext?.url) parts.push(`Active tab URL:\n${sanitizedContext.url}`);
+    if (settings.redactSensitive) {
+      parts.push('Sensitive strings have been redacted before sending this request.');
+    }
+    return parts.join('\n\n');
   }
   if (sanitizedContext?.selectedText) {
     parts.push(`Selected text:\n"""\n${sanitizedContext.selectedText.slice(0, 1800)}\n"""`);
@@ -827,8 +848,10 @@ function sanitizePromptContext(context = {}, settings = {}) {
   }
 
   const sanitized = {
+    contextSource: context.contextSource || 'page',
     pageTitle: context.pageTitle || '',
     url: context.url || '',
+    domain: context.domain || '',
     pageType: context.pageType || 'general',
     tool: context.domainContext?.tool || '',
     selectedText: signalPrefs.selectedText === false ? '' : (context.selectedText || ''),
@@ -891,6 +914,13 @@ function buildFormatInstruction(outputFormat) {
 }
 
 function buildPageContextBlock(context = {}) {
+  if (context.contextSource === 'internet') {
+    const parts = ['Context source: live internet web search'];
+    if (context.pageTitle) parts.push(`Label: ${context.pageTitle}`);
+    if (context.url) parts.push(`Active tab URL: ${context.url}`);
+    return `Context:\n${parts.join('\n')}`;
+  }
+
   const parts = [];
   if (context.pageType) parts.push(`Page type: ${context.pageType}`);
   if (context.pageTitle) parts.push(`Page title: ${context.pageTitle}`);
@@ -971,6 +1001,108 @@ async function streamChatCompletionWithFallback({ apiKey, body, fallbackBody, si
     });
     return { output, model: fallbackBody.model };
   }
+}
+
+async function chatCompletionOnce({ apiKey, body, signal }) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      ...body,
+      stream: false
+    }),
+    signal
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error?.message || err.error || `Processing failed: ${res.status}`);
+  }
+
+  const payload = await res.json();
+  return payload.choices?.[0]?.message?.content?.trim() || '';
+}
+
+async function generateGuaranteedOutput({ apiKey, body, fallbackBody, signal, onChunk }) {
+  const { output, model } = await streamChatCompletionWithFallback({
+    apiKey,
+    body,
+    fallbackBody,
+    signal,
+    onChunk
+  });
+
+  if (output && output.trim()) {
+    return output.trim();
+  }
+
+  const retryBody = fallbackBody && model !== fallbackBody.model ? fallbackBody : body;
+  const retryOutput = await chatCompletionOnce({
+    apiKey,
+    body: retryBody,
+    signal
+  });
+
+  if (retryOutput && retryOutput.trim()) {
+    return retryOutput.trim();
+  }
+
+  throw new Error('Generation returned no output. Try again.');
+}
+
+async function generateInternetSearchOutput({ apiKey, transcript, context, settings = {}, session = {}, systemPrompt, signal }) {
+  const response = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'o4-mini',
+      tools: [{ type: 'web_search' }],
+      instructions: systemPrompt,
+      input: buildUserMessage(transcript, context, settings, session)
+    }),
+    signal
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+    throw new Error(err.error?.message || err.error || `Internet search failed: ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const output = extractResponsesText(payload);
+  if (!output) {
+    throw new Error('Internet search returned no answer. Try again.');
+  }
+  return output;
+}
+
+function extractResponsesText(payload = {}) {
+  if (typeof payload.output_text === 'string' && payload.output_text.trim()) {
+    return payload.output_text.trim();
+  }
+
+  const chunks = [];
+  (payload.output || []).forEach(item => {
+    (item?.content || []).forEach(part => {
+      const candidate =
+        part?.text ||
+        part?.output_text ||
+        part?.content ||
+        part?.summary?.text ||
+        '';
+      if (typeof candidate === 'string' && candidate.trim()) {
+        chunks.push(candidate.trim());
+      }
+    });
+  });
+
+  return chunks.join('\n\n').trim();
 }
 
 async function streamChatCompletion({ apiKey, body, signal, onChunk }) {
@@ -1139,10 +1271,31 @@ async function getPageContext(options = {}) {
     }
 
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) return {};
+    if (!tab?.id) return buildInternetFallbackContext(null, 'no_active_tab');
     currentTabId = tab.id;
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_CONTEXT' });
-    const context = response?.context || {};
+    if (shouldUseInternetFallback(tab)) {
+      return buildInternetFallbackContext(tab, 'empty_or_inaccessible_tab');
+    }
+
+    let response;
+    try {
+      response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_CONTEXT' });
+    } catch {
+      return buildInternetFallbackContext(tab, 'content_script_unavailable');
+    }
+    const context = {
+      ...(response?.context || {}),
+      contextSource: 'page'
+    };
+    if (!context.pageTitle) context.pageTitle = tab.title || '';
+    if (!context.url) context.url = tab.url || tab.pendingUrl || '';
+    if (!context.domain && context.url) {
+      try {
+        context.domain = new URL(context.url).hostname;
+      } catch {
+        context.domain = '';
+      }
+    }
 
     if (
       options.includeScreenshot &&
@@ -1165,8 +1318,51 @@ async function getPageContext(options = {}) {
 
     return context;
   } catch {
-    return {};
+    return buildInternetFallbackContext(null, 'context_lookup_failed');
   }
+}
+
+function shouldUseInternetFallback(tab) {
+  if (!tab?.id) return true;
+  const url = (tab.url || tab.pendingUrl || '').trim();
+  if (!url) return true;
+
+  return [
+    /^about:blank$/i,
+    /^about:/i,
+    /^chrome:\/\//i,
+    /^chrome-search:\/\//i,
+    /^chrome-extension:\/\//i,
+    /^edge:\/\//i,
+    /^brave:\/\//i,
+    /^vivaldi:\/\//i,
+    /^opera:\/\//i,
+    /^devtools:\/\//i,
+    /^data:/i,
+    /^blob:/i,
+    /^view-source:/i
+  ].some(pattern => pattern.test(url));
+}
+
+function buildInternetFallbackContext(tab, reason) {
+  const url = tab?.url || tab?.pendingUrl || '';
+  return {
+    pageTitle: 'Internet context',
+    url,
+    domain: 'Web search',
+    pageType: 'internet',
+    contextSource: 'internet',
+    selectedText: '',
+    visibleText: '',
+    visibleTextLimit: 0,
+    codeBlocks: [],
+    headings: [],
+    formFields: [],
+    structuredData: {},
+    domainArtifacts: {},
+    extractedAt: Date.now(),
+    fallbackReason: reason || 'empty_or_inaccessible_tab'
+  };
 }
 
 async function getPageActions() {
